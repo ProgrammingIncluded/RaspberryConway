@@ -90,7 +90,7 @@ void closeKeyInputs() {
     // Set canonical back
     termios termios_p;
     tcgetattr(STDIN_FILENO, &termios_p);
-    // Set non-canonical mode and remove echo
+    // Revert everything back
     termios_p.c_lflag = termios_p.c_lflag | ICANON | ECHO;
     tcsetattr(STDIN_FILENO, TCSANOW, &termios_p);
     close(FDKEY);

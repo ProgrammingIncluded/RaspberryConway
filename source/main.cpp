@@ -7,6 +7,7 @@
 ***********************************************/
 
 #include "app.hpp"
+#include "rle_loader.hpp"
 
 #include <iostream>
 #include <cstring>
@@ -19,8 +20,8 @@
 #define DEBUG 0
 
 // Framebuffer location
-static uint BOARD_X = 2048;
-static uint BOARD_Y = 1536;
+static uint BOARD_X = 100;
+static uint BOARD_Y = 100;
 
 // Where the render window should be relative to screen coordinates
 static uint POS_X = 0;
@@ -125,12 +126,10 @@ void parseInput(char key) {
         case 'w':
             // UP
             POS_Y = (POS_Y == 0) ? POS_Y : POS_Y - 10;
-
             break;
         case 's':
             // DOWN
             POS_Y += 10;
-
             break;
         case 'd':
             // RIGHT
@@ -177,9 +176,12 @@ int main(int argc, char *argv[]) {
     // Allocate board space
     bool virtualBoard[BOARD_X * BOARD_Y] = {0};
 
-    // Basic intiailization
-    spawnGlider(10, 0, virtualBoard);
+    loadRLE("gosperglidergun.rle", virtualBoard, BOARD_X, BOARD_Y);
 
+    // Basic intiailization
+    //spawnGlider(10, 0, virtualBoard);
+
+    // FPS Logic: https://stackoverflow.com/questions/38730273/how-to-limit-fps-in-a-loop-with-c
     std::chrono::system_clock::time_point a = std::chrono::system_clock::now();
     std::chrono::system_clock::time_point b = std::chrono::system_clock::now();
 

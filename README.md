@@ -18,7 +18,7 @@ A binary will also be produced in `bin`.
 `w`, `a`, `s`, and `d` to move view finder around. `x` to zoom out and `z` to zoom in.
 
 ## Dependencies
-None. Should only require a Raspberry Pi default Linux binaries.
+None. Should only require a Raspberry Pi default Linux binaries and C++11 standards.
 
 ## Platforms
 Any Raspberry Pi with latest Raspbian installation should work.
