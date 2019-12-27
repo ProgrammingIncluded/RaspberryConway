@@ -18,6 +18,7 @@ struct RGBA {
     char A;
 };
 
+extern uint *DISPLAY;
 extern uint SCREEN_X;
 extern uint SCREEN_Y;
 
@@ -27,6 +28,7 @@ void closeFrameBuffer();
 void closeApp(int s);
 void startApp();
 void draw(RGBA *vdisplay);
+void clear();
 
 // Keyboard related IO
 void setupKeyInputs();

@@ -67,6 +67,7 @@ void loadRLE(std::string filename, bool *board, uint board_x, uint board_y, uint
                 std::cout << "Invalid file given, no size found. Cannot load: " << filename << std::endl;
             } else if (size_x > board_x || size_y > board_y) {
                 std::cout << "Given model is larger than allocated memory. Cannot load: " << filename << std::endl;
+                std::cout << "Required Size: " << size_x << ", " << size_y << std::endl;
             }
 
             loadedMeta = true;

@@ -14,14 +14,11 @@
 #include <chrono>
 #include <thread>
 
-// Kyeboard
-#include <ncurses.h>
-
-#define DEBUG 0
+#define DEBUG 1
 
 // Framebuffer location
-static uint BOARD_X = 100;
-static uint BOARD_Y = 100;
+static uint BOARD_X = 1000;
+static uint BOARD_Y = 1000;
 
 // Where the render window should be relative to screen coordinates
 static uint POS_X = 0;
@@ -34,13 +31,13 @@ static uint BOARD_TIMES_Y = 1;
 // ms per frame
 static const double MSPF = 20.0;
 
+static bool *BOARD_BUFFER;
+
 // TODO: Probably want graphics card to do this
 // Virtualboard size + padding should be a multiple of screen size 
 inline void drawBoard(bool *virtualBoard) {
     // Assume screen_x >= board_x, screen_y >= board_y
     // Display buffer
-    uint buffer[SCREEN_X * SCREEN_Y];
-
     // Iterate through the viewport which is screen size adjusted by scale and view shift
     for (uint y = POS_Y; y < POS_Y + SCREEN_Y / BOARD_TIMES_Y; y += 1) {
         for(uint x = POS_X; x < POS_X + SCREEN_X / BOARD_TIMES_X; x += 1) {
@@ -54,13 +51,11 @@ inline void drawBoard(bool *virtualBoard) {
             // Draw entire pixel in screen space with enlarging in mind
             for (uint new_y = trans_y; new_y < trans_y + BOARD_TIMES_Y; ++new_y) {
                 for (uint new_x = trans_x; new_x < trans_x + BOARD_TIMES_X; ++new_x) {
-                    buffer[new_x + (new_y * SCREEN_X)] = 0xFFFFFFFF * cur;
+                    DISPLAY[new_x + (new_y * SCREEN_X)] = 0xFFFFFFFF * cur;
                 }
             }
         }
     }
-
-    draw(reinterpret_cast<RGBA *>(buffer));
 }
 
 // Soft wrapper to deal with edge cases
@@ -76,7 +71,6 @@ inline bool getTile(uint x, uint y, bool *virtualBoard) {
 // Runs one iteration of the board game
 inline void updateBoard(bool *virtualBoard) {
     // Naive implementation
-    bool buffer[BOARD_X * BOARD_Y];
     for (uint y=0; y < BOARD_Y; y += 1) {
         for(uint x=0; x < BOARD_X; x += 1) {
             // Current cell
@@ -96,15 +90,16 @@ inline void updateBoard(bool *virtualBoard) {
 
             if (cur) {
                 bool alive = (2 <= res && res <= 3);
-                buffer[x + (y * BOARD_X)] = alive * 0xFFFFFFFF;
+                BOARD_BUFFER[x + (y * BOARD_X)] = alive * 0xFFFFFFFF;
             } else {
                 bool alive = (res == 3);
-                buffer[x + (y * BOARD_X)] = alive * 0xFFFFFFFF;
+                BOARD_BUFFER[x + (y * BOARD_X)] = alive * 0xFFFFFFFF;
             }
         }
     }
     // Update previous virtualBoard to new buffer
-    memcpy(virtualBoard, buffer, sizeof(bool) * BOARD_X * BOARD_Y);
+    memcpy(virtualBoard, BOARD_BUFFER, sizeof(bool) * BOARD_X * BOARD_Y);
+    memset(BOARD_BUFFER, 0, BOARD_X * BOARD_Y * sizeof(bool));
 }
 
 void parseInput(char key) {
@@ -174,7 +169,8 @@ int main(int argc, char *argv[]) {
     BOARD_Y = BOARD_Y < SCREEN_Y ? SCREEN_Y : BOARD_Y;
 
     // Allocate board space
-    bool virtualBoard[BOARD_X * BOARD_Y] = {0};
+    bool *virtualBoard = new bool[BOARD_X * BOARD_Y]();
+    BOARD_BUFFER = new bool[BOARD_X * BOARD_Y]();
 
     loadRLE("gosperglidergun.rle", virtualBoard, BOARD_X, BOARD_Y);
 
@@ -207,6 +203,7 @@ int main(int argc, char *argv[]) {
         // Map board to display
         parseInput(getKeyPress());
         updateBoard(virtualBoard);
+        clear();
         drawBoard(virtualBoard);
     }
 

@@ -136,6 +136,10 @@ void draw(RGBA *vdisplay) {
     memcpy(DISPLAY, vdisplay, sizeof(uint) * SCREEN_X * SCREEN_Y);
 }
 
+void clear() {
+    memset(DISPLAY, 0, sizeof(uint) * SCREEN_X * SCREEN_Y);
+}
+
 char getKeyPress() {
     char buffer[1];
 
