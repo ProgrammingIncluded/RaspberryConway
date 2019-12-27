@@ -3,7 +3,7 @@
  * File: main.cpp
  * By: ProgrammingIncluded
  * Website: ProgrammingIncluded.github.io
- * License: GNU GPLv3 (see LICENSE.txt)
+ * License: GNU GPLv3 (see LICENSE file)
 ***********************************************/
 
 #include "app.hpp"
@@ -19,8 +19,8 @@
 #define DEBUG 0
 
 // Framebuffer location
-static uint BOARD_X = 2048 / 2;
-static uint BOARD_Y = 1536 / 2;
+static uint BOARD_X = 2048;
+static uint BOARD_Y = 1536;
 
 // Where the render window should be relative to screen coordinates
 static uint POS_X = 0;
@@ -41,8 +41,8 @@ inline void drawBoard(bool *virtualBoard) {
     uint buffer[SCREEN_X * SCREEN_Y];
 
     // Iterate through the viewport which is screen size adjusted by scale and view shift
-    for (uint y = POS_Y; y < POS_Y + BOARD_Y / BOARD_TIMES_Y; y += 1) {
-        for(uint x = POS_X; x < POS_X + BOARD_X / BOARD_TIMES_X; x += 1) {
+    for (uint y = POS_Y; y < POS_Y + SCREEN_Y / BOARD_TIMES_Y; y += 1) {
+        for(uint x = POS_X; x < POS_X + SCREEN_X / BOARD_TIMES_X; x += 1) {
             // Get pixel from boardspace
             bool cur = virtualBoard[x + (y * BOARD_X)];
 
@@ -143,11 +143,11 @@ void parseInput(char key) {
     }
 
     // Check if we have viewed greater than board space
-    if ((POS_Y + BOARD_Y / BOARD_TIMES_Y) > BOARD_Y) {
-        POS_Y = BOARD_Y - (BOARD_Y / BOARD_TIMES_Y);
+    if ((POS_Y + SCREEN_Y / BOARD_TIMES_Y) > BOARD_Y) {
+        POS_Y = SCREEN_Y - (BOARD_Y / BOARD_TIMES_Y);
     }
-    if ((POS_X + BOARD_X / BOARD_TIMES_X) > BOARD_X) {
-        POS_X = BOARD_X - (BOARD_X / BOARD_TIMES_X);
+    if ((POS_X + SCREEN_X / BOARD_TIMES_X) > BOARD_X) {
+        POS_X = SCREEN_X - (BOARD_X / BOARD_TIMES_X);
     }
 }
 
@@ -178,8 +178,7 @@ int main(int argc, char *argv[]) {
     bool virtualBoard[BOARD_X * BOARD_Y] = {0};
 
     // Basic intiailization
-    for (uint x = 0; x < BOARD_X; x += 5)
-        spawnGlider(x, 0, virtualBoard);
+    spawnGlider(10, 0, virtualBoard);
 
     std::chrono::system_clock::time_point a = std::chrono::system_clock::now();
     std::chrono::system_clock::time_point b = std::chrono::system_clock::now();

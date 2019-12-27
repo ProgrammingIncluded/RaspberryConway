@@ -3,7 +3,7 @@
  * File: app.cpp
  * By: ProgrammingIncluded
  * Website: ProgrammingIncluded.github.io
- * License: GNU GPLv3 (see LICENSE.txt)
+ * License: GNU GPLv3 (see LICENSE file)
 ***********************************************/
 
 #include "app.hpp"
@@ -79,7 +79,7 @@ void setupKeyInputs() {
     termios termios_p;
     tcgetattr(STDIN_FILENO, &termios_p);
     // Set non-canonical mode and remove echo
-    termios_p.c_lflag = termios_p.c_lflag && !ICANON && !ECHO;
+    termios_p.c_lflag = termios_p.c_lflag & !ICANON & !ECHO;
     tcsetattr(STDIN_FILENO, TCSANOW, &termios_p);
 
     // Open for reading
@@ -87,13 +87,13 @@ void setupKeyInputs() {
 }
 
 void closeKeyInputs() {
-    close(FDKEY);
     // Set canonical back
     termios termios_p;
     tcgetattr(STDIN_FILENO, &termios_p);
     // Set non-canonical mode and remove echo
-    termios_p.c_lflag = termios_p.c_lflag && ICANON && ECHO;
+    termios_p.c_lflag = termios_p.c_lflag | ICANON | ECHO;
     tcsetattr(STDIN_FILENO, TCSANOW, &termios_p);
+    close(FDKEY);
 }
 
 void closeFrameBuffer() {

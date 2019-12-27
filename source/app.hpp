@@ -3,7 +3,7 @@
  * File: app.hpp
  * By: ProgrammingIncluded
  * Website: ProgrammingIncluded.github.io
- * License: GNU GPLv3 (see LICENSE.txt)
+ * License: GNU GPLv3 (see LICENSE file)
 ***********************************************/
 
 #ifndef APP_HPP
