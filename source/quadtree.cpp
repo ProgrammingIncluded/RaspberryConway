@@ -29,19 +29,7 @@ QuadTree::QuadTree() {
     this->root = root;
     this->bounds = range;
 
-    GenData *nullData = new GenData();
-    nullData->data = 0;
-    nullData->ne = nullData;
-    nullData->nw = nullData;
-    nullData->se = nullData;
-    nullData->sw = nullData;
-
-    nullData->cc = nullData;
-    nullData->ee = nullData;
-    nullData->ww = nullData;
-    nullData->nn = nullData;
-    nullData->ss = nullData;
-    this->nullData = nullData;
+    this->nullData = setupNullData();
 }
 
 QuadTree::~QuadTree() {
@@ -106,7 +94,7 @@ GenData* QuadTree::nextGeneration(QuadNode *node) {
     QuadNode *seNode = node->children + 3;
 
     // Grab length 4 centers
-    GenData result;
+    GenData result = {0};
     result.nw = nextGeneration(nwNode);
     result.sw = nextGeneration(swNode);
     result.ne = nextGeneration(neNode);
@@ -123,7 +111,7 @@ GenData* QuadTree::nextGeneration(QuadNode *node) {
 
     // Check cache
     if(!getGenData(&cached, nn)) {
-        cached->nn->data = life_4(result.nw, result.ne, result.nw, result.ne);
+        cached->data = life_4(result.nw, result.ne, result.nw, result.ne);
     }
 
     result.nn = cached;
@@ -136,7 +124,7 @@ GenData* QuadTree::nextGeneration(QuadNode *node) {
 
     // Check cache
     if(!getGenData(&cached, ss)) {
-        cached->ss->data = life_4(result.sw, result.se, result.sw, result.se);
+        cached->data = life_4(result.sw, result.se, result.sw, result.se);
     }
 
     result.ss = cached;
@@ -149,7 +137,7 @@ GenData* QuadTree::nextGeneration(QuadNode *node) {
 
     // Check cache
     if(!getGenData(&cached, cc)) {
-        cached->cc->data = life_4(result.nw, result.ne, result.sw, result.se);
+        cached->data = life_4(result.nw, result.ne, result.sw, result.se);
     }
 
     result.cc = cached;
@@ -162,7 +150,7 @@ GenData* QuadTree::nextGeneration(QuadNode *node) {
 
     // Check cache
     if(!getGenData(&cached, ee)) {
-        cached->ee->data = life_4(result.ne, result.ne, result.se, result.se);
+        cached->data = life_4(result.ne, result.ne, result.se, result.se);
     }
 
     result.ee = cached;
@@ -175,7 +163,7 @@ GenData* QuadTree::nextGeneration(QuadNode *node) {
 
     // Check cache
     if(!getGenData(&cached, ww)) {
-        cached->ww->data = life_4(result.nw, result.nw, result.sw, result.sw);
+        cached->data = life_4(result.nw, result.nw, result.sw, result.sw);
     }
 
     result.ww = cached;
@@ -183,7 +171,6 @@ GenData* QuadTree::nextGeneration(QuadNode *node) {
     GenData *resultCached;
     getGenData(&resultCached, result);
     return resultCached;
-
 
     // nn->data |= (bool) (result->nw->ne->data & 0b00000001) << 3; // nw
     // nn->data |= (bool) (result->ne->nw->data & 0b00000010) << 2; // ne
@@ -242,6 +229,33 @@ void QuadTree::addPixel(bool *board, lint boardX, lint boardY) {
                 this->addPixel(x, y);
             }
         }
+    }
+}
+
+bool QuadTree::getNextGenPixel(lint x, lint y) {
+    QuadNode *cur = this->root;
+    Range *range;
+    for(;;) {
+        range = &cur->range;
+
+        if (cur->sideLength == 2) {
+            lint borderX = range->startX + (range->endX - range->startX) / 2;
+            lint borderY = range->startY + (range->endY - range->startY) / 2;
+            if (x < borderX && y < borderY)
+                return nw(cur->gd);
+            else if (x >= borderX && y < borderY)
+                return ne(cur->gd);
+            else if (x < borderX && y >= borderY)
+                return sw(cur->gd);
+            else
+                return se(cur->gd);
+
+        } else if (cur->children == nullptr) {
+            // This is only true if we've exhausted our search
+            return false;
+        }
+        // Pick the appropriate child depending on range
+        cur = getChildFromPoint(x, y, cur);
     }
 }
 

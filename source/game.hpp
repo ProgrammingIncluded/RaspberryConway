@@ -56,6 +56,28 @@ struct hash_fun {
 static std::unordered_map<GenData, GenData*, hash_fun> GEN_DATA_CACHE;
 static std::unordered_map<bool, GenData*> BASIS_CACHE;
 
+static GenData *NULLDATA;
+
+
+GenData * setupNullData() {
+    if (NULLDATA != nullptr) {
+        return NULLDATA;
+    }
+
+    NULLDATA = new GenData();
+    NULLDATA->data = 0;
+    NULLDATA->ne = NULLDATA;
+    NULLDATA->nw = NULLDATA;
+    NULLDATA->se = NULLDATA;
+    NULLDATA->sw = NULLDATA;
+    NULLDATA->cc = NULLDATA;
+    NULLDATA->ee = NULLDATA;
+    NULLDATA->ww = NULLDATA;
+    NULLDATA->nn = NULLDATA;
+    NULLDATA->ss = NULLDATA;
+    return NULLDATA;
+}
+
 GenData *getBasis(bool data) {
     auto res = BASIS_CACHE.find(data);
     if (res != BASIS_CACHE.end())
@@ -63,6 +85,16 @@ GenData *getBasis(bool data) {
     
     GenData *val = new GenData();
     val->data = data;
+    val->ne = NULLDATA;
+    val->nw = NULLDATA;
+    val->se = NULLDATA;
+    val->sw = NULLDATA;
+
+    val->cc = NULLDATA;
+    val->ee = NULLDATA;
+    val->ww = NULLDATA;
+    val->nn = NULLDATA;
+    val->ss = NULLDATA;
     return val;
 }
 

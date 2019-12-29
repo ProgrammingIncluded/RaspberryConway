@@ -53,6 +53,7 @@ class QuadTree {
         void addPixel(bool *board, lint x, lint y);
 
         bool getPixel(lint x, lint y);
+        bool getNextGenPixel(lint x, lint y);
 
         void removeNode(QuadNode *node);
 
