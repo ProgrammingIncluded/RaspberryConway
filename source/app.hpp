@@ -22,6 +22,8 @@ extern uint *DISPLAY;
 extern uint SCREEN_X;
 extern uint SCREEN_Y;
 
+void setupOpenGLES();
+
 void setupFrameBuffer();
 void closeFrameBuffer();
 

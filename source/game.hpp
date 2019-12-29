@@ -59,7 +59,7 @@ static std::unordered_map<bool, GenData*> BASIS_CACHE;
 static GenData *NULLDATA;
 
 
-GenData * setupNullData() {
+inline GenData * setupNullData() {
     if (NULLDATA != nullptr) {
         return NULLDATA;
     }
@@ -78,7 +78,7 @@ GenData * setupNullData() {
     return NULLDATA;
 }
 
-GenData *getBasis(bool data) {
+inline GenData *getBasis(bool data) {
     auto res = BASIS_CACHE.find(data);
     if (res != BASIS_CACHE.end())
         return res->second;
@@ -100,7 +100,7 @@ GenData *getBasis(bool data) {
 
 // Memorization of data
 // returns true if new pointer created
-bool getGenData(GenData **newLoc, GenData data) {
+inline bool getGenData(GenData **newLoc, GenData data) {
     auto res = GEN_DATA_CACHE.find(data);
     if (res != GEN_DATA_CACHE.end()) {
         *newLoc = res->second;
@@ -129,7 +129,7 @@ inline char life_4 (
     GenData *nw, GenData *ne,
     GenData *sw, GenData *se
 ) {
-    char data;
+    char data = 0;
     // Set data bits for new center
     data |= life (
                 nw(nw), ne(nw), nw(ne),

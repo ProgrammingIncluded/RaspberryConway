@@ -7,6 +7,7 @@
 ***********************************************/
 
 #include "app.hpp"
+#include "game.hpp"
 #include "rle_loader.hpp"
 
 #include <iostream>
@@ -95,15 +96,11 @@ void updateBoard(bool *vb, bool *bb, uint board_x, uint board_y, uint offsetX, u
             bool n7 = getTile(x, y - 1, vb, board_x, boundY);
 
             // Check if alive
-            uint res = n0 + n1 + n2 + n3 + n4 + n5 + n6 + n7;
-
-            if (cur) {
-                bool alive = (2 <= res && res <= 3);
-                bb[x + (y * board_x)] = alive * 0xFFFFFFFF;
-            } else {
-                bool alive = (res == 3);
-                bb[x + (y * board_x)] = alive * 0xFFFFFFFF;
-            }
+            bb[x + (y * board_x)] = 0xFFFFFFFF && life(
+                                                    n0, n1, n2,
+                                                    n3, cur, n4,
+                                                    n5, n6, n7
+                                                );
         }
     }
     // Update previous VIRTUAL_BOARD to new buffer

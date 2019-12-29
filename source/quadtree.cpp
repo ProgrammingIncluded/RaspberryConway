@@ -49,7 +49,7 @@ GenData* QuadTree::nextGeneration(QuadNode *node) {
         }
 
         // Just set the data for future iterations
-        char data;
+        char data = 0;
         data |= ((bool) (node->children[0].pixelCount)) << 3; // nw
         data |= ((bool) (node->children[2].pixelCount)) << 2; // ne
         data |= ((bool) (node->children[1].pixelCount)) << 1; // sw
@@ -200,9 +200,7 @@ GenData* QuadTree::nextGeneration(QuadNode *node) {
 
 void QuadTree::addPixel(lint x, lint y) {
     QuadNode *cur = this->root;
-    Range *range;
     for(;;) {
-        range = &cur->range;
 
         // Don't traverse if we've hit the single digit which is a leaf
         if (cur->isLeaf) {
@@ -261,10 +259,7 @@ bool QuadTree::getNextGenPixel(lint x, lint y) {
 
 bool QuadTree::getPixel(lint x, lint y) {
     QuadNode *cur = this->root;
-    Range *range;
     for(;;) {
-        range = &cur->range;
-
         if (cur->isLeaf) {
             // This is only true if we've hit a leaf node
             return (cur->pixelCount == 1);

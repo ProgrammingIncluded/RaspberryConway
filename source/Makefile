@@ -1,18 +1,23 @@
 BINARY=conway
 CC=g++
-CFLAGS = -std=c++11 -Wall -I
-BIN = ../bin
-DEPS = rle_loader.hpp quadtree.hpp app.hpp game.hpp
-OBJ = rle_loader.o quadtree.o app.o
+BIN=../bin
+DEPS=rle_loader.hpp quadtree.hpp app.hpp game.hpp opengl.hpp
+OBJ=rle_loader.o quadtree.o app.o opengl.o
 
-%.0: %.c ${DEPS}
-	${CC} -c -o $@ $< ${CFLAGS}
+OPENGL_INCLUDE=/opt/vc/include
+
+# Default to no opengl but write to framebuffer
+OPENGLES?=0
+CFLAGS=-DOPENGLES_MODE=${OPENGLES} -std=c++11 -Wall -I${OPENGL_INCLUDE}
+
+%.o: %.cpp $(DEPS)
+	${CC} -c -o $@ $< $(CFLAGS)
 
 ${BINARY}: ${OBJ} main.o
-	${CC} ${CFLAGS} $@ $^ -o ${BIN}/${BINARY} -pthread
+	${CC} ${CFLAGS} $^ -o ${BIN}/${BINARY} -pthread
 
 ${BINARY}_hashlife: ${OBJ} hashlife.o
-	${CC} ${CFLAGS} $@ $^ -o ${BIN}/${BINARY}_hashlife
+	${CC} ${CFLAGS} $^ -o ${BIN}/${BINARY}_hashlife
 
 run_hashlife: ${BINARY}_hashlife
 	# Program should run in same directory binary with rle folder

@@ -32,6 +32,12 @@
 
 #include <linux/types.h>
 
+// OpenGL Interface
+#if (OPENGLES_MODE == 1)
+#include "opengl.hpp"
+#endif
+
+
 static const char *FRAMEBUFFER = "/dev/fb0";
 static const char *INPUT = nullptr;
 static const char *TERMINAL = "/dev/tty0";
@@ -104,9 +110,12 @@ void closeFrameBuffer() {
 // Shutdown command
 void closeApp(int s) {
     // Revert back to text mode
+    #if (OPENGLES_MODE == 1)
+        closeFrameBuffer();
+    #endif
+
     ioctl(FDTERM, KDSETMODE, KD_TEXT);
     close(FDTERM);
-    closeFrameBuffer();
     closeKeyInputs();
     exit(s);
 }
@@ -121,7 +130,12 @@ void startApp() {
     sigaction(SIGINT, &sigIntHandler, NULL);
 
     // Setupt the framebuffer file descriptors
-    setupFrameBuffer();
+    #if (OPENGLES_MODE == 1)
+        setupOpenGLES();
+        std::cout  << "Using OpenGL" << std::endl;
+    #else
+        setupFrameBuffer();
+    #endif
 
     // Setup the key inputs
     setupKeyInputs();
@@ -133,11 +147,18 @@ void startApp() {
 
 // Draw the application
 void draw(RGBA *vdisplay) {
-    memcpy(DISPLAY, vdisplay, sizeof(uint) * SCREEN_X * SCREEN_Y);
+    #if (OPENGLES_MODE == 1)
+        std::cout << "IMPELEMETN ME" << std::endl;
+    #else
+        memcpy(DISPLAY, vdisplay, sizeof(uint) * SCREEN_X * SCREEN_Y);
+    #endif
 }
 
 void clear() {
-    memset(DISPLAY, 0, sizeof(uint) * SCREEN_X * SCREEN_Y);
+    #if (OPENGLES_MODE == 1)
+    #else
+        memset(DISPLAY, 0, sizeof(uint) * SCREEN_X * SCREEN_Y);
+    #endif
 }
 
 char getKeyPress() {
