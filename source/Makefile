@@ -5,10 +5,18 @@ DEPS=rle_loader.hpp quadtree.hpp app.hpp game.hpp opengl.hpp
 OBJ=rle_loader.o quadtree.o app.o opengl.o
 
 OPENGL_INCLUDE=/opt/vc/include
+OPENGL_LIB=/opt/vc/lib
 
 # Default to no opengl but write to framebuffer
 OPENGLES?=0
-CFLAGS=-DOPENGLES_MODE=${OPENGLES} -std=c++11 -Wall -I${OPENGL_INCLUDE}
+
+
+ifeq (${OPENGLES}, 1)
+OPENGL_FLAGS=-I${OPENGL_INCLUDE} -L${OPENGL_LIB}
+OPENGL_FLAGS+=-lbrcmGLESv2 -lbrcmEGL -lbcm_host -lvcos -lvchiq_arm -lpthread -lrt
+endif
+
+CFLAGS=-DOPENGLES_MODE=${OPENGLES} -std=c++11 -Wall ${OPENGL_FLAGS}
 
 %.o: %.cpp $(DEPS)
 	${CC} -c -o $@ $< $(CFLAGS)

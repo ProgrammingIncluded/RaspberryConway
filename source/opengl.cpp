@@ -1,10 +1,29 @@
+/***********************************************
+ * Project: RaspberryConway
+ * File: opengl.cpp
+ * By: ProgrammingIncluded
+ * Website: ProgrammingIncluded.github.io
+ * License: GNU GPLv3 (see LICENSE file)
+ * Inspired by: https://github.com/peepo/openGL-RPi-tutorial/blob/master/common/startScreen.cpp
+***********************************************/
+
 #if (OPENGLES_MODE == 1)
 #include "opengl.hpp"
+
+#include <assert.h>
 
 #include "GLES2/gl2.h"
 #include "EGL/egl.h"
 #include "EGL/eglext.h"
 #include "bcm_host.h"
+
+#define check() assert(glGetError() == 0)
+
+uint32_t GScreenWidth;
+uint32_t GScreenHeight;
+EGLDisplay GDisplay;
+EGLSurface GSurface;
+EGLContext GContext;
 
 void setupOpenGLES() {
     bcm_host_init();
