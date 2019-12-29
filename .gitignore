@@ -1,3 +1,7 @@
+# Binary names
+bin/conway
+bin/conway_legacy
+
 # Prerequisites
 *.d
 

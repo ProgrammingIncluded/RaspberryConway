@@ -10,6 +10,8 @@
 
 #include <string>
 
+class QuadTree;
+
 extern const std::string RLE_FOLDER;
 
 // Function to load RLE into an array.
@@ -17,5 +19,6 @@ extern const std::string RLE_FOLDER;
 // offset allows an offset to where the file should be loaded in array.
 // Currently does not check file integrity
 void loadRLE(std::string filename, bool *board, uint board_x, uint board_y, uint offset_x = 0, uint offset_y = 0);
+void loadRLE(std::string filename, QuadTree *qtree);
 
 #endif /* RLE_LOADER_HPP */
