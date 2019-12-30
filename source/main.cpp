@@ -110,6 +110,7 @@ void updateBoard(bool *vb, bool *bb, uint t) {
     }
     // Update previous VIRTUAL_BOARD to new buffer
     memcpy(vb + board_x * offsetY, bb + board_x * offsetY, sizeof(bool) * board_x * board_y);
+
     if (BOARD_TIMES_X == 1 && BOARD_TIMES_Y == 1) {
         drawBoard(0, SCREEN_Y / THREADS * t, SCREEN_X, SCREEN_Y / THREADS);
     }
@@ -200,8 +201,7 @@ int main(int argc, char *argv[]) {
     VIRTUAL_BOARD = new bool[BOARD_X * BOARD_Y]();
     BOARD_BUFFER = new bool[BOARD_X * BOARD_Y]();
 
-    loadRLE("turingmachine.rle", VIRTUAL_BOARD, BOARD_X, BOARD_Y);
-
+    // loadRLE("turingmachine.rle", VIRTUAL_BOARD, BOARD_X, BOARD_Y);
 
     // Basic intiailization
     spawnGlider(10, 0, VIRTUAL_BOARD);
