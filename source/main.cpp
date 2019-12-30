@@ -201,7 +201,8 @@ int main(int argc, char *argv[]) {
     VIRTUAL_BOARD = new bool[BOARD_X * BOARD_Y]();
     BOARD_BUFFER = new bool[BOARD_X * BOARD_Y]();
 
-    // loadRLE("turingmachine.rle", VIRTUAL_BOARD, BOARD_X, BOARD_Y);
+    loadRLE("turingmachine.rle", VIRTUAL_BOARD, BOARD_X, BOARD_Y);
+
 
     // Basic intiailization
     spawnGlider(10, 0, VIRTUAL_BOARD);
