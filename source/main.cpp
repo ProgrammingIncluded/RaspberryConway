@@ -16,11 +16,11 @@
 #include <thread>
 #include <vector>
 
-#define DEBUG 1
+#define DEBUG 0
 
 // Framebuffer location
-static uint BOARD_X = 512;
-static uint BOARD_Y = 512;
+static uint BOARD_X = 2048;
+static uint BOARD_Y = 2048;
 
 // Where the render window should be relative to screen coordinates
 static uint POS_X = 0;
@@ -34,7 +34,7 @@ static uint BOARD_TIMES_Y = 1;
 static bool PAUSE = false;
 
 // ms per frame
-static const double MSPF = 20.0;
+static const double MSPF = 0.0;
 
 static bool *BOARD_BUFFER;
 static bool *VIRTUAL_BOARD;
@@ -43,12 +43,12 @@ static uint THREADS = 4;
 
 // TODO: Probably want graphics card to do this
 // Virtualboard size + padding should be a multiple of screen size 
-inline void drawBoard() {
+inline void drawBoard(uint offsetX, uint offsetY, uint screenX, uint screenY) {
     // Assume screen_x >= board_x, screen_y >= board_y
     // Display buffer
     // Iterate through the viewport which is screen size adjusted by scale and view shift
-    for (uint y = POS_Y; y < POS_Y + SCREEN_Y / BOARD_TIMES_Y; y += 1) {
-        for(uint x = POS_X; x < POS_X + SCREEN_X / BOARD_TIMES_X; x += 1) {
+    for (uint y = POS_Y + offsetY; y < POS_Y + (offsetY + screenY) / BOARD_TIMES_Y; y += 1) {
+        for(uint x = POS_X + offsetX; x < POS_X + (offsetX + screenX) / BOARD_TIMES_X; x += 1) {
             // Get pixel from boardspace
             bool cur = VIRTUAL_BOARD[x + (y * BOARD_X)];
 
@@ -69,18 +69,23 @@ inline void drawBoard() {
 // Soft wrapper to deal with edge cases
 // Starts with 0 index
 bool getTile(uint x, uint y, bool *vb, uint board_x, uint board_y) {
-    if (x >= board_x || y >= board_y || x < 0 || y < 0) {
+    if (x >= BOARD_X || y >= BOARD_Y || x < 0 || y < 0) {
         return 0;
     }
 
-    return vb[x + (y * board_x)];
+    return vb[x + (y * BOARD_X)];
 }
 
 // Runs one iteration of the board game
 // Threadable function
-void updateBoard(bool *vb, bool *bb, uint board_x, uint board_y, uint offsetX, uint offsetY) {
+void updateBoard(bool *vb, bool *bb, uint t) {
     // Naive implementation
+    uint board_y = BOARD_Y / THREADS;
+    uint board_x = BOARD_X;
+    uint offsetX = 0;
+    uint offsetY = board_y * t;
     uint boundY = board_y + offsetY;
+
     for (uint y=offsetY; y < boundY; y += 1) {
         for(uint x=offsetX; x < board_x + offsetX; x += 1) {
             // Current cell
@@ -96,7 +101,7 @@ void updateBoard(bool *vb, bool *bb, uint board_x, uint board_y, uint offsetX, u
             bool n7 = getTile(x, y - 1, vb, board_x, boundY);
 
             // Check if alive
-            bb[x + (y * board_x)] = 0xFFFFFFFF && life(
+            bb[x + (y * BOARD_X)] = 0xFFFFFFFF && life(
                                                     n0, n1, n2,
                                                     n3, cur, n4,
                                                     n5, n6, n7
@@ -104,7 +109,10 @@ void updateBoard(bool *vb, bool *bb, uint board_x, uint board_y, uint offsetX, u
         }
     }
     // Update previous VIRTUAL_BOARD to new buffer
-    memcpy(vb + board_x* offsetY, bb + board_x * offsetY, sizeof(bool) * board_x * board_y);
+    memcpy(vb + board_x * offsetY, bb + board_x * offsetY, sizeof(bool) * board_x * board_y);
+    if (BOARD_TIMES_X == 1 && BOARD_TIMES_Y == 1) {
+        drawBoard(0, SCREEN_Y / THREADS * t, SCREEN_X, SCREEN_Y / THREADS);
+    }
 }
 
 void parseInput(char key) {
@@ -160,6 +168,8 @@ void parseInput(char key) {
         if ((POS_X + SCREEN_X / BOARD_TIMES_X) > BOARD_X) {
             POS_X = SCREEN_X - (BOARD_X / BOARD_TIMES_X);
         }
+
+        drawBoard(0, 0, SCREEN_X, SCREEN_Y);
     }
 }
 
@@ -190,7 +200,7 @@ int main(int argc, char *argv[]) {
     VIRTUAL_BOARD = new bool[BOARD_X * BOARD_Y]();
     BOARD_BUFFER = new bool[BOARD_X * BOARD_Y]();
 
-    // loadRLE("turingmachine.rle", VIRTUAL_BOARD, BOARD_X, BOARD_Y);
+    loadRLE("turingmachine.rle", VIRTUAL_BOARD, BOARD_X, BOARD_Y);
 
 
     // Basic intiailization
@@ -199,10 +209,6 @@ int main(int argc, char *argv[]) {
     // FPS Logic: https://stackoverflow.com/questions/38730273/how-to-limit-fps-in-a-loop-with-c
     std::chrono::system_clock::time_point a = std::chrono::system_clock::now();
     std::chrono::system_clock::time_point b = std::chrono::system_clock::now();
-
-    // Multithreading
-    uint threadBoardY = BOARD_Y / THREADS;
-
 
     // Game Loop
     for(;;) {
@@ -231,22 +237,24 @@ int main(int argc, char *argv[]) {
             std::vector<std::thread> threads;
             for (uint t = 0; t < THREADS; ++t) {
                 // Create overlap
-                std::thread res(
+                threads.push_back(std::thread(
                     updateBoard,
                     VIRTUAL_BOARD,
                     BOARD_BUFFER,
-                    BOARD_X,
-                    threadBoardY,
-                    0,
-                    (BOARD_Y / THREADS) * t
-                );
-                threads.push_back(std::move(res));
+                    t
+                ));
             }
 
             for (uint t = 0; t < THREADS; ++t) {
                 threads.at(t).join();
             }
-            drawBoard();
+
+        }
+
+        // Support only multi thread draw on none zoom mode
+        // Implementation issue.
+        if (BOARD_TIMES_X != 1 || BOARD_TIMES_Y != 1) {
+            drawBoard(0, 0, SCREEN_X, SCREEN_Y);
         }
     }
 

@@ -4,127 +4,145 @@
  * By: ProgrammingIncluded
  * Website: ProgrammingIncluded.github.io
  * License: GNU GPLv3 (see LICENSE file)
- * Inspired by: https://github.com/peepo/openGL-RPi-tutorial/blob/master/common/startScreen.cpp
+ * Inspired by:https://blogs.igalia.com/elima/2016/10/06/example-run-an-opengl-es-compute-shader-on-a-drm-render-node/
 ***********************************************/
 
 #if (OPENGLES_MODE == 1)
 #include "opengl.hpp"
+#include "app.hpp"
 
+#include <iostream>
 #include <assert.h>
+#include <gbm.h>
+#include <fcntl.h>
+#include <string.h>
+#include <unistd.h>
 
-#include "GLES2/gl2.h"
-#include "EGL/egl.h"
-#include "EGL/eglext.h"
-#include "bcm_host.h"
+
+// Open GL libraries
+#include <GLES2/gl2.h>
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
 
 #define check() assert(glGetError() == 0)
 
-uint32_t GScreenWidth;
-uint32_t GScreenHeight;
+uint32_t GScreenHeight = SCREEN_Y;
 EGLDisplay GDisplay;
 EGLSurface GSurface;
 EGLContext GContext;
 
+void updateScreen() {
+    std::cout << "Render" << std::endl;
+    glClearColor(1.0, 1.0, 0.0, 1.0);
+    glClear(GL_COLOR_BUFFER_BIT);
+    eglSwapBuffers(GDisplay, GSurface);
+}
+
+void closeOpenGLES() {
+    std::cout << "Shutdown OpenGLES" << std::endl;
+    eglDestroySurface(GDisplay, GSurface);
+    eglMakeCurrent(GDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT);
+    eglDestroyContext(GDisplay, GContext);
+    eglTerminate(GDisplay);
+}
+
+static int match_config_to_visual(EGLDisplay egl_display, EGLint visual_id, EGLConfig *configs, int count) {
+
+    EGLint id;
+    for (uint i = 0; i < count; ++i) {
+        if (!eglGetConfigAttrib(egl_display, configs[i], EGL_NATIVE_VISUAL_ID,&id)) continue;
+        if (id == visual_id) return i;
+    }
+    return -1;
+}
+
 void setupOpenGLES() {
-    bcm_host_init();
-    int32_t success = 0;
-    EGLBoolean result;
+    int32_t fd = open ("/dev/dri/renderD128", O_RDWR);
+    assert (fd > 0);
+
+    struct gbm_device *gbm = gbm_create_device(fd);
+    assert (gbm != NULL);
+
+    struct gbm_surface *gbm_surface = gbm_surface_create(gbm, SCREEN_Y, SCREEN_X, GBM_FORMAT_XRGB8888, GBM_BO_USE_SCANOUT|GBM_BO_USE_RENDERING);
+    
+    /* setup EGL from the GBM device */
+    EGLDisplay GDisplay = eglGetPlatformDisplay (EGL_PLATFORM_GBM_MESA, gbm, NULL);
+    assert (GDisplay != NULL);
+
+    bool res = eglInitialize (GDisplay, NULL, NULL);
+    assert (res);
+
+    const char *egl_extension_st = eglQueryString (GDisplay, EGL_EXTENSIONS);
+    assert (strstr (egl_extension_st, "EGL_KHR_create_context") != NULL);
+    assert (strstr (egl_extension_st, "EGL_KHR_surfaceless_context") != NULL);
+
+    static const EGLint config_attribs[] = {
+        EGL_RENDERABLE_TYPE, EGL_OPENGL_ES3_BIT_KHR,
+        EGL_NONE
+    };
+    EGLConfig cfg;
+    EGLint count;
     EGLint num_config;
+    int config_index;
+    
+    res = eglChooseConfig (GDisplay, config_attribs, &cfg, 1, &count);
+    assert (res);
 
-    static EGL_DISPMANX_WINDOW_T nativewindow;
+    config_index = match_config_to_visual(GDisplay, GBM_FORMAT_XRGB8888, &cfg, num_config);
 
-    DISPMANX_ELEMENT_HANDLE_T dispman_element;
-    DISPMANX_DISPLAY_HANDLE_T dispman_display;
-    DISPMANX_UPDATE_HANDLE_T dispman_update;
-    VC_RECT_T dst_rect;
-    VC_RECT_T src_rect;
-
-    static const EGLint attribute_list[] =
-    {
-        EGL_RED_SIZE, 8,
-        EGL_GREEN_SIZE, 8,
-        EGL_BLUE_SIZE, 8,
-        EGL_ALPHA_SIZE, 8,
-                EGL_DEPTH_SIZE, 16,   // You need this line for depth buffering to work
-        EGL_SURFACE_TYPE, EGL_WINDOW_BIT,
+    res = eglBindAPI (EGL_OPENGL_ES_API);
+    assert (res);
+    
+    static const EGLint attribs[] = {
+        EGL_CONTEXT_CLIENT_VERSION, 3,
         EGL_NONE
     };
+    EGLContext core_ctx = eglCreateContext (GDisplay,
+                                            cfg,
+                                            EGL_NO_CONTEXT,
+                                            attribs);
+    assert (core_ctx != EGL_NO_CONTEXT);
 
-    static const EGLint context_attributes[] = 
-    {
-        EGL_CONTEXT_CLIENT_VERSION, 2,
-        EGL_NONE
-    };
-    EGLConfig config;
-
-    // get an EGL display connection
-    GDisplay = eglGetDisplay(EGL_DEFAULT_DISPLAY);
-    assert(GDisplay!=EGL_NO_DISPLAY);
-    check();
-
-    // initialize the EGL display connection
-    result = eglInitialize(GDisplay, NULL, NULL);
-    assert(EGL_FALSE != result);
-    check();
-
-    // get an appropriate EGL frame buffer configuration
-    result = eglChooseConfig(GDisplay, attribute_list, &config, 1, &num_config);
-    assert(EGL_FALSE != result);
-    check();
-
-    // get an appropriate EGL frame buffer configuration
-    result = eglBindAPI(EGL_OPENGL_ES_API);
-    assert(EGL_FALSE != result);
-    check();
-
-    // create an EGL rendering context
-    GContext = eglCreateContext(GDisplay, config, EGL_NO_CONTEXT, context_attributes);
-    assert(GContext!=EGL_NO_CONTEXT);
-    check();
-
-    // create an EGL window surface
-    success = graphics_get_display_size(0 /* LCD */, &GScreenWidth, &GScreenHeight);
-    assert( success >= 0 );
-
-    dst_rect.x = 0;
-    dst_rect.y = 0;
-    dst_rect.width = GScreenWidth;
-    dst_rect.height = GScreenHeight;
-
-    src_rect.x = 0;
-    src_rect.y = 0;
-    src_rect.width = GScreenWidth << 16;
-    src_rect.height = GScreenHeight << 16;        
-
-    dispman_display = vc_dispmanx_display_open( 0 /* LCD */);
-    dispman_update = vc_dispmanx_update_start( 0 );
-
-    dispman_element = vc_dispmanx_element_add ( dispman_update, dispman_display,
-        0/*layer*/, &dst_rect, 0/*src*/,
-        &src_rect, DISPMANX_PROTECTION_NONE, 0 /*alpha*/, 0/*clamp*/, (DISPMANX_TRANSFORM_T)0/*transform*/);
-
-    nativewindow.element = dispman_element;
-    nativewindow.width = GScreenWidth;
-    nativewindow.height = GScreenHeight;
-    vc_dispmanx_update_submit_sync( dispman_update );
-
-    check();
-
-    GSurface = eglCreateWindowSurface( GDisplay, config, &nativewindow, NULL );
-    assert(GSurface != EGL_NO_SURFACE);
-    check();
-
-    // connect the context to the surface
-    result = eglMakeCurrent(GDisplay, GSurface, GSurface, GContext);
-    assert(EGL_FALSE != result);
-    check();
-
-    // Set background color and clear buffers
-    glClearColor(0.15f, 0.25f, 0.35f, 1.0f);
-    glClear( GL_COLOR_BUFFER_BIT );
-
-   glViewport ( 0, 0, GScreenWidth, GScreenHeight );
-
-   check();
+    GSurface = eglCreateWindowSurface(GDisplay, cfg, gbm_surface, NULL);
+    
+    res = eglMakeCurrent (GDisplay, EGL_NO_SURFACE, EGL_NO_SURFACE, core_ctx);
+    assert (res);
+    
+    /* setup a compute shader */
+    // GLuint compute_shader = glCreateShader (GL_COMPUTE_SHADER);
+    // assert (glGetError () == GL_NO_ERROR);
+    
+    // const char *shader_source = COMPUTE_SHADER_SRC;
+    // glShaderSource (compute_shader, 1, &shader_source, NULL);
+    // assert (glGetError () == GL_NO_ERROR);
+    
+    // glCompileShader (compute_shader);
+    // assert (glGetError () == GL_NO_ERROR);
+    
+    // GLuint shader_program = glCreateProgram ();
+    
+    // glAttachShader (shader_program, compute_shader);
+    // assert (glGetError () == GL_NO_ERROR);
+    
+    // glLinkProgram (shader_program);
+    // assert (glGetError () == GL_NO_ERROR);
+    
+    // glDeleteShader (compute_shader);
+    
+    // glUseProgram (shader_program);
+    // assert (glGetError () == GL_NO_ERROR);
+    
+    /* dispatch computation */
+    // glDispatchCompute (1, 1, 1);
+    // assert (glGetError () == GL_NO_ERROR);
+    
+    printf ("Compute shader dispatched and finished successfully\n");
+    
+    /* free stuff */
+    // glDeleteProgram (shader_program);
+    eglDestroyContext (GDisplay, core_ctx);
+    eglTerminate (GDisplay);
+    gbm_device_destroy (gbm);
+    close (fd);
 }
 #endif

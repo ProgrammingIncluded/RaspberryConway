@@ -111,6 +111,8 @@ void closeFrameBuffer() {
 void closeApp(int s) {
     // Revert back to text mode
     #if (OPENGLES_MODE == 1)
+        closeOpenGLES();
+    #else
         closeFrameBuffer();
     #endif
 
@@ -131,8 +133,8 @@ void startApp() {
 
     // Setupt the framebuffer file descriptors
     #if (OPENGLES_MODE == 1)
-        setupOpenGLES();
         std::cout  << "Using OpenGL" << std::endl;
+        setupOpenGLES();
     #else
         setupFrameBuffer();
     #endif
@@ -148,7 +150,7 @@ void startApp() {
 // Draw the application
 void draw(RGBA *vdisplay) {
     #if (OPENGLES_MODE == 1)
-        std::cout << "IMPELEMETN ME" << std::endl;
+        updateScreen();
     #else
         memcpy(DISPLAY, vdisplay, sizeof(uint) * SCREEN_X * SCREEN_Y);
     #endif

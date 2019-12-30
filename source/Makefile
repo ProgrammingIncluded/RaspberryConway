@@ -4,16 +4,16 @@ BIN=../bin
 DEPS=rle_loader.hpp quadtree.hpp app.hpp game.hpp opengl.hpp
 OBJ=rle_loader.o quadtree.o app.o opengl.o
 
-OPENGL_INCLUDE=/opt/vc/include
-OPENGL_LIB=/opt/vc/lib
+MESA_DIR=~/mesa
+OPENGL_INCLUDE=${MESA_DIR}/include
+OPENGL_LIB=${MESA_DIR}/lib
 
 # Default to no opengl but write to framebuffer
 OPENGLES?=0
 
 
 ifeq (${OPENGLES}, 1)
-OPENGL_FLAGS=-I${OPENGL_INCLUDE} -L${OPENGL_LIB}
-OPENGL_FLAGS+=-lbrcmGLESv2 -lbrcmEGL -lbcm_host -lvcos -lvchiq_arm -lpthread -lrt
+OPENGL_FLAGS=-lGLESv2 -lEGL -lpthread -lgbm
 endif
 
 CFLAGS=-DOPENGLES_MODE=${OPENGLES} -std=c++11 -Wall ${OPENGL_FLAGS}

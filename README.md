@@ -1,11 +1,12 @@
 # RaspberryConway
-Efficient Conway's Game of Life Implementation for Raspberry Pi. Implementation will try to
+Efficient Conway's Game of Life Implementation for Raspberry Pi 4. Implementation will try to
 take advantage of hardware specific optimizations to squeeze as much of the Pi as possible.
 The source is kept as light weight as possible with little reliance on heavy libraries except an
 optional OpenGLES.
 
 Implementation currently supports direct write to framebuffer using native kernel calls.
-GPU OpenGLES is still under development.
+GPU OpenGLES support is on hold until OpenGLES API is more solified for Rapsberry Pi 4.
+A few lines of source code is available for testing.
 
 ## How to Run
 There are two modes supported, render with CPU or render with GPU via OpenGLES v2. 
@@ -18,20 +19,26 @@ make run
 A binary will also be produced in `bin`.
 
 ### GPU Render
+This feature is currently on hold until OpenGLES is more stable for Raspberry Pi 4.
+
 ```
 cd source
 make OPENGLES=1 run
 ```
 
-Things should run out of the box assuming this is ran on Raspbian on a Raspberry Pi.
 If not, make sure that `OPENGL_FLAGS` are set correctly in Makefile.
-On Raspberry Pi, all OpenGLES and other graphics libraries are in `/opt/vc`.
+See dependencies on how to install OpenGL on Rapsberry Pi 4.
 
 ## Controls
 `w`, `a`, `s`, and `d` to move view finder around. `x` to zoom out and `z` to zoom in.
 
 ## Dependencies
-None. Should only require a Raspberry Pi default Linux and OpenGLES v2 binaries and C++11 standards.
+- Mesa (OpenGL Build Only)
+    - `sudo apt-get install libgles2-mesa-dev`
+- GBM (OpenGL Build Only)
+    - `sudo apt-get install libgbm-dev`
+
+Non-OpenGL build should only require a Raspberry Pi default Linux and C++11 standards.
 
 ## Platforms
 Any Raspberry Pi with latest Raspbian installation should work.
